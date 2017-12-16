@@ -198,7 +198,7 @@ async function checkHash() {
         newHash = sha256((await readFile(filePath)).toString());
         if (oldHash !== newHash) {
             oldHash = newHash;
-            yellow("Rendering LaTe to PDF...");
+            yellow("Rendering LaTeX to PDF...");
             renderPDF(filePath);
         } else {
             await sleep(100); // Sleep longer
