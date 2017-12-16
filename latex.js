@@ -81,27 +81,58 @@ if(process.argv.length < 3) { //无[$Tex_File]参数传入
     initTex();
 }
 
-filePath = filePath || process.argv[2];
-
 let savedFilename = null;
 
-if(!filePath.toLowerCase().endsWith(".tex")) {
-    savedFilename = filePath;
-    let dir = savedFilename + "_" + getTimeString();
-    fs.mkdirSync(path.join(__dirname, "..\\..\\..\\LaTeX", dir));
-    filePath = path.join(__dirname, "..\\..\\..\\LaTeX", dir, filePath);
-    red(`400 Bad Request - Expecting LaTeX file ends with \".tex\", got ${ getExt(filePath) }`);
-    yellow(`201 Created - Changing LaTeX file path to ${ filePath + ".tex" }...`);
-    filePath += ".tex";
-    fs.writeFileSync(filePath, new Buffer(""));
-    initTex(filePath);
-} else if(!filePath.includes("/") && !filePath.includes("\\")) { // Not a path
-    //if(/^[a-zA-Z\d_-\s]+\.tex$/.test(filePath.trim())) // English file name
-    savedFilename = filePath.replace(/\.tex$/i, "");
-    let dir = savedFilename + "_" + getTimeString();
-    fs.mkdirSync(path.join(__dirname, "..\\..\\..\\LaTeX", dir));
-    console.log(path.join(__dirname, "..\\..\\..\\LaTeX", dir));
-    filePath = path.join(__dirname, "..\\..\\..\\LaTeX", dir, filePath);
+let IS_INIT = false;
+
+if(process.argv.includes("-i") || process.argv.includes("--init")) {
+    IS_INIT = true;
+    let index = process.argv.indexOf("-i"),
+        init_index = process.argv.indexOf("--init");
+    if(index === -1) {
+        index = init_index
+    } else if(index > init_index && init_index !== -1) {
+        index = init_index;
+    }
+    let args = process.argv.slice(2).filter(s => s !== "-i" && s !== "--init"); //argv: 0 node.exe 1 latex.js
+    if(args.length === 0) {
+        initTex(true);
+    } else if(args.length === 1) {
+        filePath = args[0];
+        initFilename(true);
+    } else {
+        filePath = process.argv[index + 1]; //Accept the first arg after the first -i/--init
+        initFilename(true);
+    }
+} else {
+    filePath = filePath || process.argv[2];
+    initFilename(false);
+}
+
+function initFilename(absolute = false) {
+    if (!filePath.toLowerCase().endsWith(".tex")) {
+        savedFilename = filePath;
+        let dir = savedFilename;
+        if(absolute) { //in this case, `dir` is actually filePath
+            filePath = dir;
+        } else {
+            savedFilename += "_" + getTimeString()
+            fs.mkdirSync(path.join(__dirname, "..\\..\\..\\LaTeX", dir));
+            filePath = path.join(__dirname, "..\\..\\..\\LaTeX", dir, filePath);
+        }
+        yellow(`Warning: Expecting LaTeX file ends with \".tex\", got ${ getExt(filePath) }`);
+        yellow(`Warning: Changing LaTeX file path to ${ filePath + ".tex" }...`);
+        filePath += ".tex";
+        fs.writeFileSync(filePath, new Buffer(""));
+        initTex(filePath);
+    } else if (!filePath.includes("/") && !filePath.includes("\\")) { // Not a path
+        //if(/^[a-zA-Z\d_-\s]+\.tex$/.test(filePath.trim())) // English file name
+        savedFilename = filePath.replace(/\.tex$/i, "");
+        let dir = savedFilename + "_" + getTimeString();
+        fs.mkdirSync(path.join(__dirname, "..\\..\\..\\LaTeX", dir));
+        console.log(path.join(__dirname, "..\\..\\..\\LaTeX", dir));
+        filePath = path.join(__dirname, "..\\..\\..\\LaTeX", dir, filePath);
+    }
 }
 
 outPath = filePath.replace(/\.tex$/, ".pdf");
@@ -116,8 +147,8 @@ async function init() {
     newHash = oldHash;
     keypress(process.stdin);
     process.stdin.on("keypress", function(ch, key) {
-        if ((key && key.ctrl && key.name == "c") || key.name.toLowerCase() === "q") {
-            green(`200 OK - Got ${ key.ctrl ? "Ctrl-" : "" }${ key.name }, exiting...`)
+        if (key && key.ctrl && key.name == "c") {
+            green(`${ key.ctrl ? "Ctrl-" : "" }${ key.name }`);
             process.exit(0);
         }
     });
@@ -135,27 +166,27 @@ async function init() {
     cp.exec("sublime_text " + toPath(filePath), err => { // fixed the multi-open error
         if(!err) {
             if(new Date().getTime() - start_timestamp > 2000) {
-                magenta("404 Not Found - \"Sublime Text 3\" has been closed.");
+                magenta("\"Sublime Text 3\" has been closed.");
                 quitedProcess.push("sublime_text");
             } else {
-                red("500 Internal Server Error - \"Sublime Text 3\" is already running.");
+                red("Warning: \"Sublime Text 3\" is already running.");
             }
             checkShouldQuit();
         } else
-            red("500 Internal Server Error - Failed to start \"Sublime Text 3\" from command line.");
+            red("Error: Failed to start \"Sublime Text 3\" from command line.");
     });
-    green("200 OK - \"Sublime Text 3\" started.");
+    green("\"Sublime Text 3\" is started.");
     cp.exec(`SumatraPDF ${ toPath(filePath.replace(/\.tex$/, ".pdf")) }`, err => {
         if(!err) {
-            quitedProcess.push("SumatraPDF");
-            magenta("404 Not Found - \"Sumatra PDF\" has been closed.");
+            quitedProcess.push("sumatrapdf");
+            magenta("\"Sumatra PDF\" has been closed.");
             checkShouldQuit();
         } else {
-            red("500 Internal Server Error - Failed to start \"Sumatra PDF\" from command line.");
+            red("Error: Failed to start \"Sumatra PDF\" from command line.");
             red("If SumatraPDF is started, please ignore this message.");
         }
     });
-    green("200 OK - \"Sumatra PDF\" started.");
+    green("\"Sumatra PDF\" started.");
     while (true) {
         checkHash();
         await sleep(50); // #dontedit# To ensure there're empty ticks in Macrotasks list.
@@ -167,7 +198,7 @@ async function checkHash() {
         newHash = sha256((await readFile(filePath)).toString());
         if (oldHash !== newHash) {
             oldHash = newHash;
-            yellow("100 Continue - Rendering PDF...");
+            yellow("Rendering LaTe to PDF...");
             renderPDF(filePath);
         } else {
             await sleep(100); // Sleep longer
@@ -201,7 +232,7 @@ var a = 0;
 
 function main() {
     try {
-        if(typeof filePath === "string" && filePath.endsWith(".tex") && !fs.existsSync(filePath)) {//tex不存在
+        if(typeof filePath === "string" && filePath.endsWith(".tex") && !fs.existsSync(filePath) && !IS_INIT) {//tex不存在
             initTex(filePath);
         }
         fs.accessSync(
@@ -210,7 +241,7 @@ function main() {
         );
     } catch (e) {
         fatal(
-            `403 Forbidden - You may not have the access to read/write ${ filePath }`
+            `Error: You may not have the access to read/write ${ filePath }`
         );
         process.exit(1);
     }
@@ -233,15 +264,19 @@ function renderPDF(p) {
  * @param {String} p
  */
 function renderPDFSync(p) {
+    try {
     cp.execSync(
         `pdflatex -interaction=batchmode -file-line-error -synctex=1 ${ toPath(p) }`, {
             cwd: path.dirname(p)
-        }, renderCheck);
+        });
+    } catch (err) {
+        renderCheck(err, `Full logs can be found at ${path.dirname(p)}${path.sep}\*.log`);
+    }
 }
 
 function renderCheck(err, stdout, stderr, time) {
     if (err) {
-        red("502 Internal Server Error - Render process exited with code " + err.code + ".");
+        red("Error: Render process exited with code " + err.code + ".");
         red("Outputs are shown below:");
         switch (true) {
             case Boolean(stdout) && Boolean(stderr): // Tricks start
@@ -257,7 +292,7 @@ function renderCheck(err, stdout, stderr, time) {
         }
         return; //不自动切换
     } else {
-        green(`200 OK - PDF rendered successfully${
+        green(`PDF rendered successfully${
             typeof time === "number" ? ` in ${
                 new Date().getTime() - time
             } ms` : ""
@@ -268,14 +303,14 @@ function renderCheck(err, stdout, stderr, time) {
     else {
         cp.exec(`SumatraPDF ${ toPath(outPath) }`, err => {
             if (!err) {
-                quitedProcess.push("SumatraPDF");
-                magenta("404 Not Found - \"Sumatra PDF\" has been closed.");
+                quitedProcess.push("sumatrapdf");
+                magenta("\"Sumatra PDF\" has been closed.");
                 checkShouldQuit();
             } else {
-                // ignore this.
+                // ignore.
             }
         });
-        yellow("100 Continue - Switching to \"Sumatra PDF\"...");
+        yellow("Switching to \"Sumatra PDF\"...");
     }
 }
 
@@ -287,11 +322,17 @@ function showHelpMsg() {
 
 function checkShouldQuit() {
     const now_timestamp = new Date().getTime();
-    if(quitedProcess.includes("sublime_text") && now_timestamp - start_timestamp > 2000) {
-        green("200 OK - \"Sublime Text 3\" has been closed and this process will be terminated.");
+    if(quitedProcess.includes("sumatrapdf") && quitedProcess.includes("sublime_text") && now_timestamp - start_timestamp > 2000) {
+        green("\"Sublime Text 3\" and \"Sumatra PDF\" have been closed and this process will be terminated.");
         process.exit(0);
     }
     return false;
+}
+
+function debug_log(text) {
+    if("LATEXJS_DEBUG" in process.env && process.env["LATEXJS_DEBUG"].toLowerCase() == "true") {
+        console.log(text);
+    }
 }
 
 /**
@@ -340,7 +381,7 @@ function getMonthString(m) {
 
 function initTex(p) {
     try {
-        yellow("100 Continue - Generating TeX file...");
+        yellow("Generating .tex file from template...");
         let timeStr;
         let fileDir;
         if(!p) {
@@ -351,25 +392,33 @@ function initTex(p) {
         } else {
             filePath = p;
         }
-        yellow("100 Continue - Reading template.tex...");
+        yellow("Reading LaTeX template file...");
         let template = fs.readFileSync(path.join(__dirname, "template.tex"));
         if(savedFilename !== null) {
-            template = template.toString().replace("My Document", savedFilename);
+            template = template.toString().replace("My Document", _name(savedFilename));
         }
-        green("200 OK - Template loaded.")
-        yellow("100 Continue - Writing...");
+        debug_log(template);
+        green("Template loaded.");
+        yellow("Writing data to file system...");
         fs.writeFileSync(filePath, template);
-        green(`200 OK - Tex file ${filePath} generated.`);
-        yellow("100 Continue - Rendering PDF... (This may spend a few seconds if LaTeX package \"natbib\" isn't installed)");
+        green(`.tex file ${filePath} generated.`);
+        yellow("Rendering PDF from .tex file... For some special cases, this might last a few minutes.");
         let t0 = new Date().getTime();
         renderPDFSync(filePath);
         let t1 = new Date().getTime();
-        green(`200 OK - PDF rendered in ${ t1 - t0 } milliseconds.`);
+        green(`PDF rendered in ${ t1 - t0 } milliseconds.`);
         return true;
     } catch (er) {
-        fatal("500 Internal Server Error -", er.name, "-", er.stack);
+        fatal("Error:", er.name, "-", er.stack);
         process.exit(1);
     }
+}
+
+function _name(f) {
+    if(f.includes("\\")) {
+        return f.split("\\").pop();
+    }
+    return f;
 }
 
 main();

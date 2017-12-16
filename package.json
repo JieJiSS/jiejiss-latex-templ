@@ -10,6 +10,8 @@
 	],
 	"license": "MIT",
 	"dependencies": {
+		"audio-loader": "^1.0.3",
+		"audio-play": "^2.2.0",
 		"bluebird": "~3.5.0",
 		"colorprint": "^4.1.0",
 		"keypress": "^0.2.1",
