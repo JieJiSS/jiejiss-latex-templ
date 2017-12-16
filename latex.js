@@ -415,10 +415,12 @@ function initTex(p) {
 }
 
 function _name(f) {
+    let str = f;
     if(f.includes("\\")) {
-        return f.split("\\").pop();
+        str = f.split("\\").pop();
     }
-    return f;
+    str = str.replace(/\_/g, "\\_");
+    return str;
 }
 
 main();
