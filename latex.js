@@ -169,7 +169,7 @@ async function init() {
                 magenta("\"Sublime Text 3\" has been closed.");
                 quitedProcess.push("sublime_text");
             } else {
-                red("Warning: \"Sublime Text 3\" is already running.");
+                yellow("Warning: \"Sublime Text 3\" is already running.");
             }
             checkShouldQuit();
         } else
@@ -298,9 +298,9 @@ function renderCheck(err, stdout, stderr, time) {
             } ms` : ""
         }.`);
     }
-    if (process.argv[4] === "-l" || process.argv[4] === "--lazy")
+    if (process.argv.includes("-l") || process.argv.includes("--lazy")) {
         return;
-    else {
+    } else {
         cp.exec(`SumatraPDF ${ toPath(outPath) }`, err => {
             if (!err) {
                 quitedProcess.push("sumatrapdf");
@@ -315,9 +315,10 @@ function renderCheck(err, stdout, stderr, time) {
 }
 
 function showHelpMsg() {
-    console.log("Usage: node " + toPath(path.relative(process.cwd(), __filename)) + " [$TeX_File] [OPTIONS]");
+    console.log("Usage: node " + toPath(path.relative(process.cwd(), __filename)) + " [OPTIONS] [$TeX_File]");
     console.log("\nWHERE OPTIONS could be:");
     console.log("  -l, --lazy    To prevent auto-reloading the output PDF.");
+    console.log("  -i, --init    To produce a LaTeX file from preseted template.");
 }
 
 function checkShouldQuit() {
