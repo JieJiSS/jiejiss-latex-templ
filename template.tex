@@ -1,5 +1,5 @@
 \documentclass[UTF8, a4paper, 12pt]{ctexart}
-
+\usepackage[svgnames]{xcolor}
 \defaultfontfeatures{Mapping=tex-text} % 字体
 
 % \usepackage[utf8]{inputenc}
@@ -9,16 +9,47 @@
 \usepackage{amssymb}
 \usepackage{listings} % 代码
 \usepackage{esvect} % 向量的表示
-% \setromanfont{Heiti SC} %设置中文字体
+% \setromanfont{Heiti SC} % 设置中文字体
 \XeTeXlinebreaklocale "zh"
-\XeTeXlinebreakskip = 0pt plus 1pt minus 0.1pt %文章内中文自动换行，可以自行调节
+\XeTeXlinebreakskip = 0pt plus 1pt minus 0.1pt % 文章内中文自动换行，可以自行调节
 
 \usepackage[version=4]{mhchem} % 化学方程式
 \usepackage{chemfig} % 有机化学结构式
+\usepackage{enumitem} % 列表
+\usepackage{etoolbox}
+\usepackage{ifxetex, ifluatex}
+\usepackage{tikz}
+\usepackage{framed}
 
-\title{New Document}
-\author{JieJiSS}
-\date{\today}
+\newcommand*\circled[1]{\tikz[baseline=(char.base)]{
+            \node[shape=circle,draw,inner sep=1pt] (char) {#1};}}
+
+\usepackage{fontspec}
+\newfontfamily\monaco{Monaco} % macOS
+
+% \usepackage{color} % 颜色，已经有xcolor了
+\definecolor{dkgreen}{rgb}{0,0.6,0}
+\definecolor{gray}{rgb}{0.5,0.5,0.5}
+\definecolor{lightgray}{rgb}{0.9,0.9,0.9}
+\definecolor{mauve}{rgb}{0.58,0,0.82}
+\definecolor{kwd}{rgb}{0.88,0.13,0.3}
+
+\usepackage{geometry}
+\geometry{left=3.0cm, right=3.0cm, top=3.7cm, bottom=3.4cm}
+
+\newcommand*\openquote{\makebox(25,-10){\scalebox{5}{``}}}
+\newcommand*\closequote{\makebox(25,-22){\scalebox{5}{''}}}
+\colorlet{shadecolor}{lightgray}
+
+\makeatletter
+\newif\if@right
+\def\shadequote{\@righttrue\shadequote@i}
+\def\shadequote@i{\begin{snugshade}\begin{quote}\openquote}
+\def\endshadequote{%
+  \if@right\hfill\fi\closequote\end{quote}\end{snugshade}}
+\@namedef{shadequote*}{\@rightfalse\shadequote@i}
+\@namedef{endshadequote*}{\endshadequote}
+\makeatother
 
 % \usepackage[fontsize=14]{scrextend}
 
@@ -27,14 +58,13 @@
 \usepackage{caption}
 \usepackage{graphicx, float, subfig} % 图片
 \usepackage{amsmath}
-\usepackage[colorlinks, linkcolor=blue]{hyperref}
-
-\usepackage{color} % 颜色
-
-\definecolor{dkgreen}{rgb}{0,0.6,0}
-\definecolor{gray}{rgb}{0.5,0.5,0.5}
-\definecolor{mauve}{rgb}{0.58,0,0.82}
-\definecolor{kwd}{rgb}{0.88,0.13,0.3}
+\usepackage{hyperref}
+\hypersetup{
+    colorlinks=true,
+    linkcolor=blue,
+    filecolor=blue,      
+    urlcolor=blue,
+}
 
 \lstset{ %
   language=MATLAB,                % the language of the code
@@ -61,13 +91,14 @@
   stringstyle=\color{mauve},      % string literal style
 }
 
-\usepackage{fontspec}
-\newfontfamily\monaco{Monaco} % macOS
-
-\usepackage{geometry}
-\geometry{left=3.0cm, right=3.0cm, top=3.7cm, bottom=3.4cm}
+\DeclareSymbolFont{extraup}{U}{zavm}{m}{n}
+\DeclareMathSymbol{\varheart}{\mathalpha}{extraup}{86}
 
 \CTEXsetup[format={\Large\bfseries}]{section}
+
+\title{New Document}
+\author{JieJiSS}
+\date{\today}
 
 \begin{document}
   \maketitle
@@ -79,7 +110,7 @@
   \setlength{\parindent}{2em}
   \begin{spacing}{1.4}
   
-  % Your Tex here!
+  % Your Tex code here!
   
   \end{spacing}
 \end{document}
